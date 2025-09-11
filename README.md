@@ -9,7 +9,8 @@ Reproducible code for the elastic net modelling used in the manuscript McElheron
 - `LICENSE` – project license (MIT)
 
 ## TL;DR
-Assuming you have Bvals loading (CpG x Individual) and clinical metadata (Individual x Features, i.e. Frailty Index), this is how DNAmFrailty was first derived. 
+Assuming you have Bvals loading (CpG x Individual) and clinical metadata (Individual x Features, i.e. Frailty Index), 
+this is how DNAmFrailty was first derived. 
 ```R
 set.seed(123)                           # Set Random Seed
 FrailtyIndex <- sheet[["FrailtyIndex"]] # Outcome, here is Rockwood Frailty Index
@@ -38,8 +39,10 @@ DNAmFrailtyModel    <- cv_list[[which.min(cv_cvm_min)]]
 
 # Make Predictions on test/future datasets
 # Note that the readout of Poisson models require exponentiating :)
-DNAmFrailty_test <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals_test), s = "lambda.min", type = "response"))
-sheet$DNAmFrailty <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals), s = "lambda.min", type = "response"))
+DNAmFrailty_test <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals_test),
+                        s = "lambda.min", type = "response"))
+sheet$DNAmFrailty <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals),
+                        s = "lambda.min", type = "response"))
 
 # To estimate DNAmFrailty in independent cohrts, data is QC'ed and inputted into the DNAmFrailtyModel.
 ```
@@ -65,13 +68,15 @@ No raw PHI/clinical data are committed to this repository. Place required inputs
 - Zenodo DOI available upon acceptance.
 
 ## Code availability (for manuscript)
-> The analysis code supporting this study is publicly available at: **https://github.com/USER/dnamfrailty-elastic-net** (tag: `v1.0.0`). A snapshot of the repository at publication is archived on Zenodo (DOI: *to be added upon release*).
+> The analysis code supporting this study is publicly available at: **https://github.com/USER/dnamfrailty-elastic-net** (tag: `v1.0.0`).
+> A snapshot of the repository at publication is archived on Zenodo (DOI: *to be added upon release*).
 
 ## Citation
 If you use this code, please cite the paper (McElheron et al., 2025, once published) and this repository (see `CITATION.cff`).
 
 ## License
 MIT — see `LICENSE`.
+
 
 
 
