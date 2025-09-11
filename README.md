@@ -1,5 +1,5 @@
 # DNAmFrailty – Elastic Net
-Reproducible code for the elastic net modelling used in the manuscript (target journal: *Nature Communications*).
+Reproducible code for the elastic net modelling used in the manuscript McElheron et al 2025.
 
 ## Contents
 - `analysis/DNAmFrailty_Elastic_Net.Rmd` – main analysis notebook
@@ -22,12 +22,11 @@ R -q -e 'rmarkdown::render("analysis/DNAmFrailty_Elastic_Net.Rmd")'
 ```
 
 ## Data availability
-No raw PHI/clinical data are committed to this repository. Place required inputs (e.g., `Bvalues`, `sheet`) in `data/` or provide paths accessible to the Rmd. If permitted, include **de-identified** minimal examples under `data/` or `inst/extdata/` and document them here.
+No raw PHI/clinical data are committed to this repository. Place required inputs (e.g., `Bvalues`, `sheet`) in `data/` or provide paths accessible to the Rmd.
 
 ## Reproducibility
-- Use `renv` (recommended) to generate a `renv.lock` for the exact package versions used in the paper.
-- CI (`render.yml`) installs minimal dependencies and renders the Rmd on each push/PR.
-- Consider minting a Zenodo DOI upon acceptance and tagging a `v1.0.0` release.
+- See `renv`.
+- Zenodo DOI available upon acceptance.
 
 ## Code availability (for manuscript)
 > The analysis code supporting this study is publicly available at: **https://github.com/USER/dnamfrailty-elastic-net** (tag: `v1.0.0`). A snapshot of the repository at publication is archived on Zenodo (DOI: *to be added upon release*).
@@ -37,3 +36,4 @@ If you use this code, please cite the paper (McElheron et al., 2025, once publis
 
 ## License
 MIT — see `LICENSE`.
+
