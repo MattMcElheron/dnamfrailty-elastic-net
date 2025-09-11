@@ -1,0 +1,39 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+.Rprofile
+
+# renv
+renv/library/
+renv/staging/
+renv/python/
+!renv/activate.R
+
+# Packrat (legacy)
+packrat/
+
+# R markdown caches
+cache/
+*_cache/
+*.utf8.md
+*.knit.md
+
+# Output
+*.html
+*.pdf
+*.docx
+
+# Data (keep empty placeholders only)
+data/*
+!data/.gitkeep
+inst/extdata/*
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Python venvs
+.venv/
+venv/

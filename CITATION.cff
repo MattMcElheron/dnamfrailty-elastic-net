@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: If you use this code, please cite the associated paper and this repository.
+title: DNAmFrailty – Elastic Net Analysis
+version: 1.0.0
+date-released: 2025-09-11
+authors:
+  - family-names: McElheron
+    given-names: Matt
+    affiliation: Trinity College Dublin
+license: MIT
+repository-code: https://github.com/MattMcElheron/dnamfrailty-elastic-net
+keywords:
+  - epigenetics
+  - DNA methylation
+  - elastic net
+  - frailty

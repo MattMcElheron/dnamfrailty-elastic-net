@@ -1,0 +1,37 @@
+name: Render Rmd
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Install deps
+        run: |
+          R -q -e 'install.packages(c("rmarkdown","glmnet","caret","dplyr","tidyr"), repos="https://cloud.r-project.org")'
+
+      - name: Render Rmd
+        run: |
+          R -q -e 'rmarkdown::render("analysis/DNAmFrailty_Elastic_Net.Rmd")'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-report
+          path: |
+            analysis/*.html
+            analysis/*.pdf
+            analysis/*.docx

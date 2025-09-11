@@ -1,0 +1,180 @@
+---
+title: "DNAmFrailty R Notebook"
+output: html_notebook
+---
+
+## Name: Matt McElheron  
+
+## Email: mcelherm@tcd.ie  
+
+## Date: 05/07/2023  
+
+## Dataset:
+
+> This analysis contains EPIC DNA methylation data matrix 
+(Rows:CpGs x Columns:Individuals) and an associated clinical data 
+matrix (Rows:Individuals x Columns:Features) including a Rockwood Frailty 
+Index, here derived from 31 multi-system age-related  health deficits. 
+
+## Aim:
+
+> introduce a basic pipeine of analysis for TILDA Methylation data, including:
+  
+  * Data Loading
+  * Data QC
+  * Epigenetic Clock Derivation (DNAmFrailty)
+  
+
+## Packages/Set up
+
+```{r, results='hide', echo=TRUE, warning=FALSE, message=FALSE}
+#   Data parsing packages
+library(dplyr)
+library(doParallel)
+library(parallel)
+
+#   Bioinformatic packages
+library(minfi)
+library(limma)
+library(IlluminaHumanMethylationEPICanno.ilm10b5.hg38)
+library(glmnet)
+library(caret)
+
+```
+
+
+## Data Loading/Quality Control Filtering
+
+```{r}
+
+# Path containing IDATs (either a directory of IDAT pairs or a SampleSheet.csv)
+idat_dir <- "~/EPIC/IDATs"
+
+# Optional: read SampleSheet if present to carry pheno data
+ss_file <- file.path(idat_dir, "SampleSheet.csv")
+if (file.exists(ss_file)) {
+  targets <- read.metharray.sheet(idat_dir, pattern = "SampleSheet.csv")
+  rgSet   <- read.metharray.exp(targets = targets, extended = TRUE, force = TRUE)
+} else {
+  rgSet   <- read.metharray.exp(base = idat_dir, extended = TRUE, force = TRUE)
+}
+
+## ---- Detection p-values & basic QC ----
+detP <- detectionP(rgSet)                    # probes x samples
+
+# 1) Drop poor-quality samples: >1% failed probes at p > 0.01
+sample_fail_frac <- colMeans(detP > 0.01)
+keep_samples <- sample_fail_frac <= 0.01
+message(sprintf("Dropping %d/%d samples failing detection p>0.01 threshold.",
+                sum(!keep_samples), length(keep_samples)))
+rgSet <- rgSet[, keep_samples]
+detP  <- detP[, keep_samples, drop = FALSE]
+
+# 2) Drop poor-quality probes: failed in >1% of retained samples at p > 0.01
+probe_fail_frac <- rowMeans(detP > 0.01)
+keep_probes_detp <- probe_fail_frac <= 0.01
+message(sprintf("Dropping %d/%d probes failing detection p>0.01 threshold.",
+                sum(!keep_probes_detp), length(keep_probes_detp)))
+rgSet <- rgSet[keep_probes_detp, ]
+
+## ---- Remove SNP probes & CpH probes by name (Illumina control content) ----
+# Illumina array includes:
+# - SNP genotyping probes: names start with "rs"
+# - Non-CpG (CpH) targeting probes: names start with "ch"
+probe_names <- featureNames(rgSet)
+is_rs <- grepl("^rs", probe_names)   # SNP probes -> drop
+is_ch <- grepl("^ch", probe_names)   # CpH probes -> drop
+drop_by_name <- is_rs | is_ch
+if (any(drop_by_name)) {
+  message(sprintf("Dropping %d 'rs*' (SNP) and %d 'ch*' (CpH) probes.",
+                  sum(is_rs), sum(is_ch)))
+  rgSet <- rgSet[!drop_by_name, ]
+}
+
+## ---- Quantile normalisation ----
+# preprocessQuantile returns a GenomicRatioSet (β & M available)
+grSet <- preprocessQuantile(rgSet)
+
+## ---- Remove loci with known SNPs (MAF = 0) at CpG/SBE ----
+# This removes any probe with *any* known SNP at the CpG or single-base extension.
+# (MAF=0 is most stringent; for practical EWAS, MAF=0.05 is common.)
+grSet <- dropLociWithSnps(grSet, snps = c("CpG", "SBE"), maf = 0)
+
+## ---- Remove sex chromosomes ----
+anno <- getAnnotation(grSet)
+autosomes <- seqnames(anno) %in% paste0("chr", 1:22)
+message(sprintf("Dropping %d sex-chromosome probes.", sum(!autosomes)))
+grSet <- grSet[autosomes, ]
+
+
+## ---- Final objects ----
+Bvalues <- getBeta(grSet)        # β-values (probes x samples)
+sheet <- pData(grSet)            # sample metadata
+#ann850k <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b5.hg38) %>% 
+#  as.data.frame() %>% mutate(cpg = rownames(.))
+
+
+```
+
+
+## Elastic Net
+> Further hypertuning can be performed for additional parameters, such as 
+training/test split, but this will depend on your cohort. 
+
+
+```{r}
+
+# Parameters
+outcome      <- "FI31index_w1_w1"
+outcome_name <- "Frailty"
+folds        <- 10
+split_prop   <- 0.65
+model_fam    <- c("gaussian","binomial","poisson")[3]  # pick 1, 2, 3
+
+# --- Prepare data & split ---
+Y <- sheet[[outcome]]
+set.seed(123)
+train_idx <- createDataPartition(Y, p = split_prop, list = FALSE)
+
+X_train <- t(Bvalues[,  train_idx, drop = FALSE])
+X_test  <- t(Bvalues[, -train_idx, drop = FALSE])
+Y_train <- Y[train_idx]
+Y_test  <- Y[-train_idx]
+
+# --- Alpha search (elastic net grid) ---
+alpha_grid <- c(1, 0.98, 0.75, 0.50, 0.25, 0.00)
+
+cv_list <- lapply(alpha_grid, function(a) {
+  cv.glmnet(x = as.matrix(X_train),
+            y = Y_train,
+            alpha = a,
+            family = model_fam,
+            nfolds = folds)
+})
+
+# Pick alpha with lowest CV error at lambda.min
+cv_cvm_min <- sapply(cv_list, function(cv) min(cv$cvm, na.rm = TRUE))
+best_alpha <- alpha_grid[which.min(cv_cvm_min)]
+best_cv    <- cv_list[[which.min(cv_cvm_min)]]
+
+# --- Predict (test & full) ---
+pred_type <- if (model_fam == "binomial") "class" else "response"
+
+pred_test <- predict(best_cv, newx = as.matrix(X_test), s = "lambda.min", type = pred_type)
+pred_full <- predict(best_cv, newx = as.matrix(t(Bvalues)), s = "lambda.min", type = pred_type)
+
+# --- Attach to sheet & mark train/test ---
+sheet[[paste0("DNAm", outcome_name)]] <- as.vector(pred_full)
+
+sheet$training_test <- factor(
+  ifelse(seq_len(nrow(sheet)) %in% train_idx, "Train", "Test"),
+  levels = c("Train","Test")
+)
+
+write.csv(sheet, file.path(idat_dir, paste0("SampleSheet_DNAm", outcome_name, ".csv")))
+
+```
+
+
+
+
