@@ -9,6 +9,7 @@ Reproducible code for the elastic net modelling used in the manuscript McElheron
 - `LICENSE` – project license (MIT)
 
 ## TL;DR
+Assuming you have Bvals loading (CpG x Individual) and clinical metadata (Individual x Features, i.e. Frailty Index), this is how DNAmFrailty was first derived. 
 ```R
 set.seed(123)                           # Set Random Seed
 FrailtyIndex <- sheet[["FrailtyIndex"]] # Outcome, here is Rockwood Frailty Index
@@ -68,5 +69,6 @@ If you use this code, please cite the paper (McElheron et al., 2025, once publis
 
 ## License
 MIT — see `LICENSE`.
+
 
 
