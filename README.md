@@ -34,11 +34,14 @@ cv_list <- lapply(alpha_grid, function(a) {
 # Pick alpha with lowest CV error at lambda.min, train model
 cv_cvm_min <- sapply(cv_list, function(cv) min(cv$cvm, na.rm = TRUE))
 best_alpha <- alpha_grid[which.min(cv_cvm_min)]
-best_cv    <- cv_list[[which.min(cv_cvm_min)]]
+DNAmFrailtyModel    <- cv_list[[which.min(cv_cvm_min)]]
 
 # Make Predictions on test/future datasets
-DNAmFrailty_test <- predict(best_cv, newx = as.matrix(Bvals_test), s = "lambda.min", type = "response")
-sheet$DNAmFrailty <- predict(best_cv, newx = as.matrix(Bvals), s = "lambda.min", type = "response")
+# Note that the readout of Poisson models require exponentiating :)
+DNAmFrailty_test <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals_test), s = "lambda.min", type = "response"))
+sheet$DNAmFrailty <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals), s = "lambda.min", type = "response"))
+
+# To estimate DNAmFrailty in independent cohrts, data is QC'ed and inputted into the DNAmFrailtyModel.
 ```
 
 ## Quick start
@@ -69,6 +72,7 @@ If you use this code, please cite the paper (McElheron et al., 2025, once publis
 
 ## License
 MIT — see `LICENSE`.
+
 
 
 
