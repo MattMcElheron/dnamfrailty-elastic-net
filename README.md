@@ -8,6 +8,38 @@ Reproducible code for the elastic net modelling used in the manuscript McElheron
 - `CITATION.cff` – citation metadata
 - `LICENSE` – project license (MIT)
 
+## TL;DR
+```R
+set.seed(123)                           # Set Random Seed
+FrailtyIndex <- sheet[["FrailtyIndex"]] # Outcome, here is Rockwood Frailty Index
+split_prop = 0.65                       # Training Test Split
+train_idx <- createDataPartition(FrailtyIndex, p = split_prop, list = FALSE)
+
+# Split training data (Bvals) and outcome (Frailty Data)
+Bvals_train <- t(Bvals[,  train_idx, drop = FALSE])
+Bvals_test  <- t(Bvals[, -train_idx, drop = FALSE])
+Frailty_Index_Train <- FrailtyIndex[train_idx]
+Frailty_Index_test  <- FrailtyIndex[-train_idx]
+
+# Tune Alpha Parameter
+cv_list <- lapply(alpha_grid, function(a) {
+  cv.glmnet(x = as.matrix(Bvals_train),
+            y = Frailty_Index_Train,
+            alpha = a,
+            family = "Poisson",
+            nfolds = folds)
+})
+
+# Pick alpha with lowest CV error at lambda.min, train model
+cv_cvm_min <- sapply(cv_list, function(cv) min(cv$cvm, na.rm = TRUE))
+best_alpha <- alpha_grid[which.min(cv_cvm_min)]
+best_cv    <- cv_list[[which.min(cv_cvm_min)]]
+
+# Make Predictions on test/future datasets
+DNAmFrailty_test <- predict(best_cv, newx = as.matrix(Bvals_test), s = "lambda.min", type = "response")
+sheet$DNAmFrailty <- predict(best_cv, newx = as.matrix(Bvals), s = "lambda.min", type = "response")
+```
+
 ## Quick start
 ```bash
 # 1) Clone
@@ -36,4 +68,5 @@ If you use this code, please cite the paper (McElheron et al., 2025, once publis
 
 ## License
 MIT — see `LICENSE`.
+
 
