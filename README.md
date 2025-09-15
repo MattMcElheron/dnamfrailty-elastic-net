@@ -10,7 +10,7 @@ Reproducible code for the elastic net modelling used in the manuscript McElheron
 
 ## TL;DR
 Assuming you have Bvals loading (CpG x Individual) and clinical metadata (Individual x Features, i.e. Frailty Index), 
-this is how DNAmFrailty was first derived. On a typical PhD-worthy laptop, the entire workflow takes under 45 mins to run on 500 sample, 
+this is how DNAmFrailty was first derived. On a typical PhD-worthy laptop, the entire workflow takes under 45 mins to run on 500 samples,
 the majority of which is loading/QC.
 ```R
 set.seed(123)                           # Set Random Seed
@@ -77,6 +77,7 @@ If you use this code, please cite the paper (McElheron et al., 2025, once publis
 
 ## License
 MIT — see `LICENSE`.
+
 
 
 
