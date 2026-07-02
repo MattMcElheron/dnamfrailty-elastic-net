@@ -40,10 +40,10 @@ DNAmFrailtyModel    <- cv_list[[which.min(cv_cvm_min)]]
 
 # Make Predictions on test/future datasets
 # Note that the readout of Poisson models require exponentiating :)
-DNAmFrailty_test <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals_test),
-                        s = "lambda.min", type = "response"))
-sheet$DNAmFrailty <- exp(predict(DNAmFrailtyModel, newx = as.matrix(Bvals),
-                        s = "lambda.min", type = "response"))
+DNAmFrailty_test <- predict(DNAmFrailtyModel, newx = as.matrix(Bvals_test),
+                        s = "lambda.min", type = "response")
+sheet$DNAmFrailty <- predict(DNAmFrailtyModel, newx = as.matrix(Bvals),
+                        s = "lambda.min", type = "response")
 
 # To estimate DNAmFrailty in independent cohrts, data is QC'ed and inputted into the DNAmFrailtyModel.
 ```
